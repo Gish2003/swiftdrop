@@ -1,0 +1,114 @@
+# Replace @swiftdrop-mNN with real GitHub handles (see docs/TEAM.md). Later rules override earlier ones.
+*                                           @swiftdrop-m01
+
+# foundation / shared
+/AGENTS.md                                  @swiftdrop-m01
+/CLAUDE.md                                  @swiftdrop-m01
+/docs/architecture/                         @swiftdrop-m01
+/docs/conventions/                          @swiftdrop-m01
+/docs/contracts/                            @swiftdrop-m01
+/packages/contracts/                        @swiftdrop-m01
+/packages/contracts/src/parcel-status.ts    @swiftdrop-m04 @swiftdrop-m01
+/packages/contracts/src/events.ts           @swiftdrop-m08 @swiftdrop-m01
+/apps/api/src/app.module.ts                 @swiftdrop-m01
+/apps/api/src/common/                       @swiftdrop-m01
+/apps/api/src/common/auth/                  @swiftdrop-m02 @swiftdrop-m01
+/apps/api/src/config/                       @swiftdrop-m01
+/apps/web/src/components/                   @swiftdrop-m01 @swiftdrop-m10
+/apps/web/src/lib/api/                      @swiftdrop-m01
+
+# database: one schema file per owner
+/packages/db/prisma/schema/base.prisma      @swiftdrop-m01
+/packages/db/prisma/schema/auth.prisma      @swiftdrop-m02
+/packages/db/prisma/schema/parcel.prisma    @swiftdrop-m04 @swiftdrop-m03
+/packages/db/prisma/schema/merchant.prisma  @swiftdrop-m05
+/packages/db/prisma/schema/courier.prisma   @swiftdrop-m06
+/packages/db/prisma/schema/pricing.prisma   @swiftdrop-m07
+/packages/db/prisma/schema/dispatch.prisma  @swiftdrop-m07
+/packages/db/prisma/schema/events.prisma    @swiftdrop-m08
+/packages/db/prisma/schema/audit.prisma     @swiftdrop-m09
+/packages/db/prisma/migrations/             @swiftdrop-m01
+/packages/db/seed/00-users.ts               @swiftdrop-m02
+/packages/db/seed/10-zones-pricing.ts       @swiftdrop-m07
+/packages/db/seed/20-merchants.ts           @swiftdrop-m05
+/packages/db/seed/30-parcels.ts             @swiftdrop-m04
+
+# M2 auth & users
+/apps/api/src/modules/auth/                 @swiftdrop-m02
+/apps/api/src/modules/users/                @swiftdrop-m02
+/apps/api/test/auth/                        @swiftdrop-m02
+/apps/api/test/auth-matrix/                 @swiftdrop-m02
+/apps/web/src/proxy.ts                      @swiftdrop-m02
+/apps/web/src/lib/auth/                     @swiftdrop-m02
+/apps/web/src/features/auth/                @swiftdrop-m02
+/apps/web/src/app/(public)/login/           @swiftdrop-m02
+/apps/web/src/app/(public)/register/        @swiftdrop-m02
+/apps/web/src/app/admin/users/              @swiftdrop-m02
+
+# M3 customer & booking
+/apps/api/src/modules/bookings/             @swiftdrop-m03
+/apps/api/test/bookings/                    @swiftdrop-m03
+/apps/web/src/app/customer/                 @swiftdrop-m03
+/apps/web/src/app/page.tsx                  @swiftdrop-m03
+/apps/web/src/features/booking/             @swiftdrop-m03
+
+# M4 parcel lifecycle & tracking
+/apps/api/src/modules/parcels/              @swiftdrop-m04
+/apps/api/test/parcels/                     @swiftdrop-m04
+/apps/web/src/app/(public)/track/           @swiftdrop-m04
+/apps/web/src/features/tracking/            @swiftdrop-m04
+
+# M5 merchants
+/apps/api/src/modules/merchants/            @swiftdrop-m05
+/apps/api/src/modules/merchant-api/         @swiftdrop-m05
+/apps/api/test/merchants/                   @swiftdrop-m05
+/apps/web/src/app/merchant/                 @swiftdrop-m05
+/apps/web/src/app/(public)/merchant-signup/ @swiftdrop-m05
+/apps/web/src/app/admin/merchants/          @swiftdrop-m05
+/apps/web/src/features/merchant/            @swiftdrop-m05
+
+# M6 courier
+/apps/api/src/modules/courier/              @swiftdrop-m06
+/apps/api/src/infra/storage/                @swiftdrop-m06
+/apps/api/test/courier/                     @swiftdrop-m06
+/apps/web/src/app/courier/                  @swiftdrop-m06
+/apps/web/src/features/courier/             @swiftdrop-m06
+
+# M7 dispatch & pricing
+/apps/api/src/modules/dispatch/             @swiftdrop-m07
+/apps/api/src/modules/pricing/              @swiftdrop-m07
+/apps/api/test/dispatch/                    @swiftdrop-m07
+/apps/api/test/pricing/                     @swiftdrop-m07
+/apps/web/src/app/dispatch/                 @swiftdrop-m07
+/apps/web/src/app/admin/zones/              @swiftdrop-m07
+/apps/web/src/app/admin/pricing/            @swiftdrop-m07
+/apps/web/src/features/dispatch/            @swiftdrop-m07
+/apps/web/src/features/pricing/             @swiftdrop-m07
+
+# M8 events
+/apps/worker/                               @swiftdrop-m08
+/apps/api/src/infra/events/                 @swiftdrop-m08
+/apps/api/src/modules/event-ops/            @swiftdrop-m08
+/apps/api/test/events/                      @swiftdrop-m08
+/apps/web/src/app/admin/ops/                @swiftdrop-m08
+/apps/web/src/features/ops/                 @swiftdrop-m08
+
+# M9 reporting & audit
+/apps/api/src/modules/reports/              @swiftdrop-m09
+/apps/api/src/modules/audit/                @swiftdrop-m09
+/apps/api/test/reports/                     @swiftdrop-m09
+/apps/web/src/app/admin/page.tsx            @swiftdrop-m09
+/apps/web/src/app/admin/reports/            @swiftdrop-m09
+/apps/web/src/app/admin/audit/              @swiftdrop-m09
+/apps/web/src/features/reports/             @swiftdrop-m09
+/apps/web/src/features/audit/               @swiftdrop-m09
+
+# M10 devops & quality
+/docker/                                    @swiftdrop-m10
+/compose.yaml                               @swiftdrop-m10
+/compose.prod.yaml                          @swiftdrop-m10
+/Makefile                                   @swiftdrop-m10
+/.github/                                   @swiftdrop-m10
+/apps/e2e/                                  @swiftdrop-m10
+/apps/api/src/modules/health/               @swiftdrop-m10
+/apps/worker/src/health/                    @swiftdrop-m10

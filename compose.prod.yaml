@@ -1,0 +1,74 @@
+# Production-like stack from the prod Dockerfile targets (no bind mounts, no hot reload).
+# `make prod-up`. Owner: M10 (finalise in Week 8; Kubernetes is a P2 stretch goal).
+# Uses the same .env — for a real deployment set NODE_ENV=production, COOKIE_SECURE=true,
+# ENABLE_DEV_LOGIN=false and fresh secrets.
+name: swiftdrop-prod
+
+x-app: &app
+  env_file: .env
+  environment:
+    NODE_ENV: production
+    ENABLE_DEV_LOGIN: 'false'
+    NEXT_PUBLIC_ENABLE_DEV_LOGIN: 'false'
+  restart: unless-stopped
+
+services:
+  migrate:
+    <<: *app
+    build: { context: ., dockerfile: docker/Dockerfile, target: migrate }
+    restart: 'no'
+    depends_on: { postgres: { condition: service_healthy } }
+
+  api:
+    <<: *app
+    build: { context: ., dockerfile: docker/Dockerfile, target: api }
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      rabbitmq: { condition: service_healthy }
+
+  worker:
+    <<: *app
+    build: { context: ., dockerfile: docker/Dockerfile, target: worker }
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      rabbitmq: { condition: service_healthy }
+
+  web:
+    <<: *app
+    build: { context: ., dockerfile: docker/Dockerfile, target: web }
+    depends_on: [api]
+
+  gateway:
+    image: caddy:2.10-alpine
+    ports: ['8080:80']
+    volumes: ['./docker/Caddyfile:/etc/caddy/Caddyfile:ro']
+    depends_on: [api, web]
+
+  postgres:
+    image: postgres:17-alpine
+    environment: { POSTGRES_USER: swiftdrop, POSTGRES_PASSWORD: swiftdrop, POSTGRES_DB: swiftdrop }
+    volumes: [pg-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U swiftdrop -d swiftdrop']
+      interval: 5s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:4.1-management-alpine
+    environment: { RABBITMQ_DEFAULT_USER: swiftdrop, RABBITMQ_DEFAULT_PASS: swiftdrop }
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 10s
+      retries: 12
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+
+  minio:
+    image: rustfs/rustfs:1.0.3
+    environment: { RUSTFS_ACCESS_KEY: swiftdrop, RUSTFS_SECRET_KEY: swiftdrop-secret }
+    volumes: [minio-data:/data]
+
+volumes:
+  pg-data:
+  minio-data:

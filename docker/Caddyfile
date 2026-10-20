@@ -1,0 +1,16 @@
+# Gateway: one origin for the browser (http://localhost:8080) → same-site httpOnly cookies, no CORS.
+# Owner: M10.
+:80 {
+	encode gzip
+
+	handle /api/* {
+		reverse_proxy api:4000 {
+			# stream Server-Sent Events immediately (live tracking)
+			flush_interval -1
+		}
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}

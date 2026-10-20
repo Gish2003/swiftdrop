@@ -1,0 +1,17 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// SwiftDrop Prisma schema — split per module. Owner of this file: M1.
+// Each *.prisma file in this folder is owned by one member (see header comment).
+// Relations that cross files are pre-declared; if you need a NEW cross-file
+// relation, coordinate with the owner of the other file in the same PR.
+// Workflow: docs/conventions/database-migrations.md
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}

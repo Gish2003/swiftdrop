@@ -1,0 +1,24 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens — use these (e.g. bg-brand, text-muted) instead of raw colours so the UI stays
+ * consistent across portals. Owner: M1 + M10. Add tokens via PR; don't hard-code hex values in features.
+ */
+@theme {
+  --color-brand: #1d4ed8;
+  --color-brand-dark: #1e3a8a;
+  --color-brand-soft: #dbeafe;
+  --color-ink: #0f172a;
+  --color-muted: #64748b;
+  --color-line: #e2e8f0;
+  --color-surface: #ffffff;
+  --color-canvas: #f8fafc;
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-danger: #b91c1c;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  @apply bg-canvas text-ink antialiased;
+}

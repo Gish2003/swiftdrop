@@ -1,0 +1,42 @@
+// Owner: M7 (Dispatch, admin & pricing)
+
+enum AssignmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model CourierProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  zoneId           String?
+  vehicleType      String?
+  isAvailable      Boolean  @default(true)
+  maxActiveParcels Int      @default(15)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zone DeliveryZone? @relation(fields: [zoneId], references: [id])
+
+  @@map("courier_profiles")
+}
+
+/// At most one ACTIVE assignment per parcel — enforce inside the assignment transaction.
+model CourierAssignment {
+  id           String           @id @default(cuid())
+  parcelId     String
+  courierId    String
+  assignedById String
+  status       AssignmentStatus @default(ACTIVE)
+  assignedAt   DateTime         @default(now())
+  completedAt  DateTime?
+
+  parcel     Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  courier    User   @relation("CourierAssignments", fields: [courierId], references: [id])
+  assignedBy User   @relation("AssignedBy", fields: [assignedById], references: [id])
+
+  @@index([courierId, status])
+  @@index([parcelId, status])
+  @@map("courier_assignments")
+}

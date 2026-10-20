@@ -1,0 +1,67 @@
+// Owner: M5 (Merchant portal & partner API)
+
+enum MerchantStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+model Merchant {
+  id           String         @id @default(cuid())
+  ownerUserId  String         @unique
+  businessName String
+  contactEmail String
+  contactPhone String?
+  status       MerchantStatus @default(PENDING)
+  approvedAt   DateTime?
+  approvedById String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  owner            User              @relation(fields: [ownerUserId], references: [id])
+  approvedBy       User?             @relation("MerchantApprovedBy", fields: [approvedById], references: [id])
+  apiKeys          ApiKey[]
+  webhookEndpoints WebhookEndpoint[]
+  parcels          Parcel[]
+
+  @@index([status])
+  @@map("merchants")
+}
+
+/// Raw key shown once at creation: `sd_live_<prefix>_<secret>`. Only a SHA-256 hash is stored.
+model ApiKey {
+  id         String    @id @default(cuid())
+  merchantId String
+  name       String
+  prefix     String    @unique
+  keyHash    String    @unique
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@map("api_keys")
+}
+
+/// Signing secret is encrypted at rest (AES-256-GCM, key = WEBHOOK_SECRET_ENC_KEY) because HMAC signing needs the raw value.
+model WebhookEndpoint {
+  id                      String   @id @default(cuid())
+  merchantId              String
+  url                     String
+  secretEncrypted         String
+  /// Kept during rotation so receivers can verify with either secret for a grace period.
+  previousSecretEncrypted String?
+  eventTypes              String[] @default(["parcel.status_changed"])
+  isActive                Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  merchant Merchant         @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  attempts WebhookAttempt[]
+
+  @@index([merchantId])
+  @@map("webhook_endpoints")
+}

@@ -1,0 +1,75 @@
+// Owner: M8 (RabbitMQ, notifications & webhooks)
+
+/// Transactional outbox. Written in the SAME transaction as the business change; the worker relay publishes it.
+model OutboxEvent {
+  /// = eventId in the event envelope (uuid)
+  id            String    @id
+  eventType     String
+  eventVersion  Int
+  routingKey    String
+  payload       Json
+  correlationId String
+  createdAt     DateTime  @default(now())
+  publishedAt   DateTime?
+  attempts      Int       @default(0)
+  lastError     String?
+
+  @@index([publishedAt, createdAt])
+  @@map("outbox_events")
+}
+
+/// Idempotency: a consumer records (consumer, eventId) before/with its side effect.
+model ProcessedEvent {
+  consumer    String
+  eventId     String
+  processedAt DateTime @default(now())
+
+  @@id([consumer, eventId])
+  @@map("processed_events")
+}
+
+enum WebhookAttemptStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  DEAD
+}
+
+model WebhookAttempt {
+  id             String               @id @default(cuid())
+  endpointId     String
+  eventId        String
+  attemptNumber  Int
+  status         WebhookAttemptStatus @default(PENDING)
+  responseStatus Int?
+  errorMessage   String?
+  durationMs     Int?
+  nextRetryAt    DateTime?
+  createdAt      DateTime             @default(now())
+
+  endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([endpointId, createdAt])
+  @@index([eventId])
+  @@map("webhook_attempts")
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+}
+
+model NotificationLog {
+  id        String              @id @default(cuid())
+  eventId   String
+  channel   NotificationChannel
+  /// Masked recipient, e.g. "j***@example.com"
+  recipient String
+  template  String
+  status    String
+  error     String?
+  createdAt DateTime            @default(now())
+
+  @@unique([eventId, channel, recipient])
+  @@map("notification_logs")
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@swiftdrop/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Playwright end-to-end journeys against the running stack. Owner: M10.",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "typescript": "6.0.3"
+  }
+}

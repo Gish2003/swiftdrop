@@ -1,0 +1,18 @@
+// Owner: M6 (Courier application)
+
+/// Files live in MinIO (private bucket); only object keys are stored. Serve via short-lived presigned URLs.
+model ProofOfDelivery {
+  id            String   @id @default(cuid())
+  parcelId      String   @unique
+  courierId     String
+  recipientName String
+  photoKey      String?
+  signatureKey  String?
+  notes         String?
+  capturedAt    DateTime @default(now())
+
+  parcel  Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  courier User   @relation(fields: [courierId], references: [id])
+
+  @@map("proof_of_delivery")
+}

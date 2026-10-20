@@ -1,0 +1,43 @@
+// Owner: M7 (Dispatch, admin & pricing)
+
+model DeliveryZone {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String   @unique
+  /// Lower-cased city names served by this zone
+  cities    String[]
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pickupParcels  Parcel[]         @relation("PickupZone")
+  dropoffParcels Parcel[]         @relation("DropoffZone")
+  couriers       CourierProfile[]
+  rulesFrom      PricingRule[]    @relation("RuleFromZone")
+  rulesTo        PricingRule[]    @relation("RuleToZone")
+
+  @@map("delivery_zones")
+}
+
+/// Most specific active rule wins (highest priority). Null zone/size = wildcard.
+model PricingRule {
+  id           String      @id @default(cuid())
+  name         String
+  fromZoneId   String?
+  toZoneId     String?
+  size         ParcelSize?
+  baseFeeCents Int
+  perKgCents   Int         @default(0)
+  priority     Int         @default(0)
+  isActive     Boolean     @default(true)
+  validFrom    DateTime?
+  validTo      DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  fromZone DeliveryZone? @relation("RuleFromZone", fields: [fromZoneId], references: [id])
+  toZone   DeliveryZone? @relation("RuleToZone", fields: [toZoneId], references: [id])
+
+  @@index([isActive, priority])
+  @@map("pricing_rules")
+}

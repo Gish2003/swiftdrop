@@ -1,0 +1,22 @@
+// Owner: M9 (Reporting, audit & operational insights)
+
+/// Append-only. Never store secrets; keep PII to the minimum needed (ids, not addresses).
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorRole  String?
+  /// dot.case verb, e.g. "merchant.approved", "pricing_rule.updated", "parcel.status_changed"
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

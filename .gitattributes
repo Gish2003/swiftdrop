@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary
+# Lockfile: on conflict, take main's version and re-run `pnpm install` (see docs/conventions/git-workflow.md)
+pnpm-lock.yaml -diff linguist-generated=true

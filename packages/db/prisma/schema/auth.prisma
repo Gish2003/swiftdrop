@@ -1,0 +1,69 @@
+// Owner: M2 (Authentication & user management)
+
+/// Must match ROLES in packages/contracts/src/roles.ts
+enum Role {
+  CUSTOMER
+  MERCHANT
+  COURIER
+  DISPATCHER
+  ADMIN
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  /// argon2id hash. Null for OAuth-only accounts.
+  passwordHash  String?
+  name          String
+  phone         String?
+  role          Role     @default(CUSTOMER)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions          RefreshSession[]
+  oauthAccounts     OAuthAccount[]
+  merchant          Merchant?
+  courierProfile    CourierProfile?
+  customerParcels   Parcel[]              @relation("CustomerParcels")
+  statusChanges     ParcelStatusHistory[]
+  courierAssignments CourierAssignment[]  @relation("CourierAssignments")
+  assignmentsMade   CourierAssignment[]   @relation("AssignedBy")
+  proofsCaptured    ProofOfDelivery[]
+  merchantsApproved Merchant[]            @relation("MerchantApprovedBy")
+  auditLogs         AuditLog[]
+
+  @@index([role])
+  @@map("users")
+}
+
+/// Rotating refresh tokens. Only a hash of the token is stored.
+model RefreshSession {
+  id           String    @id @default(cuid())
+  userId       String
+  tokenHash    String    @unique
+  userAgent    String?
+  ip           String?
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_sessions")
+}
+
+model OAuthAccount {
+  id                String   @id @default(cuid())
+  userId            String
+  provider          String   // "google"
+  providerAccountId String
+  createdAt         DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("oauth_accounts")
+}
