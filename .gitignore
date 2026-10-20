@@ -27,3 +27,7 @@ apps/e2e/.auth/
 .idea/
 *.log
 apps/api/.openapi/
+
+# Claude Code runtime state
+.claude/*.lock
+.claude/settings.local.json
