@@ -5,8 +5,9 @@ import { useState } from 'react';
 import { Alert, Button, FormField, Input } from '@/components/ui';
 import { api } from '@/lib/api/client';
 import { errorMessage } from '@/lib/api/errors';
+import { GoogleButton } from './GoogleButton';
 
-/** Owner: M2. Works as soon as POST /auth/login is implemented. TODO(M2): Google sign-in button → /api/v1/auth/google */
+/** Owner: M2. Email + password sign-in, plus a Google sign-in link. */
 export function LoginForm() {
   const router = useRouter();
   const next = useSearchParams().get('next');
@@ -43,6 +44,8 @@ export function LoginForm() {
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? 'Signing in…' : 'Sign in'}
       </Button>
+
+      <GoogleButton label="Sign in with Google" />
     </form>
   );
 }
