@@ -113,4 +113,30 @@ Reliable asynchronous integration, which the assignment explicitly requires. You
 
 ## Status / notes
 
-_Update as you go._
+Implemented (see `docs/conventions/events.md` for the behaviour):
+
+- Outbox relay (`FOR UPDATE SKIP LOCKED`, ordered, stops the batch on failure).
+- Retry queues + bounded backoff + DLQ in `topology.ts` / `RabbitMqService.consume` (`TransientError`, `x-attempt`).
+- Notifications consumer (customer + recipient emails, mock SMS, masked `NotificationLog`, per-target idempotency).
+- Webhooks consumer (HMAC signing, timeout, one `WebhookAttempt` per try, per-endpoint idempotency, DEAD after the last retry).
+- Ops API: `GET /admin/ops/outbox`, `GET /admin/ops/webhook-attempts`, `POST /admin/ops/webhook-attempts/:id/retry` (audited), and the `/admin/ops` page.
+- Dev helpers: `apps/worker/scripts/webhook-echo.ts` and `demo-event.ts`.
+- Tests: unit (backoff, signature, secret crypto, masking, templates, `isRetryable`) and integration in `apps/api/test/events/`
+  (relay, retry/DLQ, consumers incl. duplicate / unavailable endpoint / 4xx / provider error, the status change → notification + webhook
+  flow, ops endpoints with negative authorization cases).
+
+Decisions to know about:
+
+- Webhook secret format `<iv>:<tag>:<ciphertext>` (base64, AES-256-GCM) is documented in `events.md`; M5 must use `encryptSecret`
+  from `apps/worker/src/consumers/webhooks/secret-crypto.ts` (or the same format) when creating/rotating secrets.
+- A 4xx from a merchant is recorded `FAILED` and acknowledged (not dead-lettered); only exhausted retries become `DEAD` + DLQ.
+- A notification for a parcel that no longer exists is skipped with a warning.
+- The integration tests load the worker sources at runtime (`apps/api/test/events/worker.ts`) because `apps/api/tsconfig.json`
+  has `rootDir = apps/api`.
+
+Not done / for others:
+
+- `webhook-echo` as a compose service under the `dev` profile and a seeded demo endpoint (needs M10 for `compose.yaml` and M5 for the seed).
+- DLQ depth from the RabbitMQ management API (optional in the brief).
+- Purging published outbox rows older than 7 days (optional).
+- Demo step 6 script and a Playwright journey for `/admin/ops` (with M10).

@@ -16,6 +16,7 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RabbitMqService.name);
   private connection?: amqp.AmqpConnectionManager;
   private channel?: ChannelWrapper;
+  private inspector?: ChannelWrapper;
 
   constructor(@InjectConfig() private readonly config: Env) {}
 
@@ -33,6 +34,34 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
 
   isConnected(): boolean {
     return this.connection?.isConnected() ?? false;
+  }
+
+  /**
+   * Message/consumer counts of a queue (passive declare), or null if it does not exist or the
+   * broker is unreachable. Uses its own channel: a passive declare of a missing queue closes the
+   * channel, and that must not disturb the SSE subscriber channel. The wrapper reopens it.
+   */
+  async queueDepth(queue: string): Promise<{ messages: number; consumers: number } | null> {
+    if (!this.connection) return null;
+    this.inspector ??= this.connection.createChannel({ json: false });
+    try {
+      const q = await this.inspector.checkQueue(queue);
+      return { messages: q.messageCount, consumers: q.consumerCount };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Publish straight to a work queue (default exchange), with broker confirm. Only for operator
+   * re-queues (e.g. re-delivering one webhook); domain events always go through OutboxService.
+   */
+  async publishToQueue(queue: string, body: unknown, headers: Record<string, string> = {}) {
+    await this.channel!.sendToQueue(queue, Buffer.from(JSON.stringify(body)), {
+      persistent: true,
+      contentType: 'application/json',
+      headers,
+    });
   }
 
   /**
@@ -61,6 +90,7 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
+    await this.inspector?.close();
     await this.channel?.close();
     await this.connection?.close();
   }
