@@ -11,6 +11,8 @@ test('admin sees outbox, queues and webhook deliveries on /admin/ops', async ({ 
     .getByTestId('dev-login')
     .getByRole('button', { name: /Ada Admin/ })
     .click();
+  // Wait for the login redirect, so the session cookie is set before we navigate on.
+  await expect(page).toHaveURL(/\/admin$/);
   await page.goto('/admin/ops');
 
   await expect(page.getByRole('heading', { name: 'Event operations' })).toBeVisible();
