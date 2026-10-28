@@ -14,10 +14,10 @@ export const ATTEMPT_FILTERS: { value: AttemptStatus | 'ALL'; label: string }[] 
 ];
 
 const STATUS_STYLES: Record<AttemptStatus, string> = {
-  PENDING: 'bg-slate-100 text-slate-700',
-  SUCCEEDED: 'bg-green-100 text-green-800',
-  FAILED: 'bg-amber-100 text-amber-800',
-  DEAD: 'bg-red-100 text-red-700',
+  PENDING: 'bg-canvas text-muted',
+  SUCCEEDED: 'bg-success/10 text-success',
+  FAILED: 'bg-warning/10 text-warning',
+  DEAD: 'bg-danger/10 text-danger',
 };
 
 /** Owner: M8. Outbox backlog counters. */

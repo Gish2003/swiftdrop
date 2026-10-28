@@ -102,9 +102,30 @@ export class EventOpsService {
         HttpStatus.CONFLICT,
       );
     }
+    // Only the newest attempt for this endpoint + event can be retried, and not while the worker
+    // still has an automatic retry scheduled; otherwise the merchant would receive it twice.
+    const latest = await this.prisma.webhookAttempt.findFirst({
+      where: { endpointId: attempt.endpointId, eventId: attempt.eventId },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    });
+    if (latest && latest.id !== attempt.id) {
+      throw new AppError(
+        ERROR_CODES.CONFLICT,
+        'A newer attempt exists for this event and endpoint; retry that one instead',
+        HttpStatus.CONFLICT,
+      );
+    }
+    if (attempt.status === 'FAILED' && attempt.nextRetryAt && attempt.nextRetryAt > new Date()) {
+      throw new AppError(
+        ERROR_CODES.CONFLICT,
+        'An automatic retry is already scheduled for this attempt',
+        HttpStatus.CONFLICT,
+      );
+    }
     const event = await this.prisma.outboxEvent.findUnique({ where: { id: attempt.eventId } });
     if (!event) throw notFound('Event');
-    if (!this.rabbit.isConnected()) {
+    // The default exchange drops messages for a missing queue, so make sure it exists first.
+    if (!this.rabbit.isConnected() || !(await this.rabbit.queueDepth(QUEUES.WEBHOOKS))) {
       throw new AppError(
         ERROR_CODES.EVENT_BUS_UNAVAILABLE,
         'The message broker is unavailable, try again shortly',

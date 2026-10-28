@@ -137,6 +137,18 @@ Decisions to know about:
 Not done / for others:
 
 - `webhook-echo` as a compose service under the `dev` profile and a seeded demo endpoint (needs M10 for `compose.yaml` and M5 for the seed).
-- DLQ depth from the RabbitMQ management API (optional in the brief).
-- Purging published outbox rows older than 7 days (optional).
-- Demo step 6 script and a Playwright journey for `/admin/ops` (with M10).
+- SSRF: the webhooks consumer only checks the URL scheme. An approved merchant could point an endpoint at an internal
+  host (`postgres:5432`, `169.254.169.254`, …) and read the result in the attempts list. M5 should reject private,
+  loopback and link-local hosts when endpoints are saved; resolving and re-checking in the consumer would be defence in depth.
+- `encryptSecret` and the `x-target-endpoint` header name live in `apps/worker`, which `apps/api` cannot import. Moving them
+  to `packages/contracts` (with M1) would let M5 reuse them.
+
+Review fixes (merge):
+
+- `GET /admin/ops/queues` (added in this PR, also shows DLQ depth) opens a short-lived channel per lookup, so the first call
+  after boot and calls after a missing queue no longer return `null`. The test now requires numeric depths.
+- Notification idempotency keys include the target role (`customer:` / `recipient:` + masked address), so two addresses
+  that mask the same way are both emailed.
+- Operator retry only works on the newest attempt for an endpoint + event, never while an automatic retry is scheduled,
+  and only if the webhooks queue exists (the default exchange would drop the message). Publishing has a 10 s timeout.
+- The `.gitignore` change was dropped (M10's file; the unanchored `documents/` pattern was too broad).

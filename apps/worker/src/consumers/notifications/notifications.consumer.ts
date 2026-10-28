@@ -93,18 +93,23 @@ export class NotificationsConsumer implements OnApplicationBootstrap {
   }): Target[] {
     const targets: Target[] = [];
     const emailed = new Set<string>();
-    for (const address of [parcel.customer?.email, parcel.recipientEmail]) {
+    // The role prefix keeps the idempotency key unique per target: two different addresses can
+    // mask to the same string (johnsmith@ and jacobsmith@ → j******h@), and the second would be skipped.
+    for (const [role, address] of [
+      ['customer', parcel.customer?.email],
+      ['recipient', parcel.recipientEmail],
+    ] as const) {
       if (!address || emailed.has(address.toLowerCase())) continue;
       emailed.add(address.toLowerCase());
       targets.push({
         channel: 'EMAIL',
-        masked: maskEmail(address),
+        masked: `${role}:${maskEmail(address)}`,
         send: (m) => this.mail.sendEmail(address, m.subject, m.text),
       });
     }
     targets.push({
       channel: 'SMS',
-      masked: maskPhone(parcel.recipientPhone),
+      masked: `recipient:${maskPhone(parcel.recipientPhone)}`,
       send: (m) => this.mail.sendSms(parcel.recipientPhone, m.sms),
     });
     return targets;

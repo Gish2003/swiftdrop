@@ -7,7 +7,7 @@ import type { Role } from '@swiftdrop/contracts';
 import request from 'supertest';
 import { RabbitMqService } from '../../src/infra/events';
 import { createTestApp, type TestContext } from '../utils/app';
-import { until } from './worker';
+import { until, worker, workerConfig } from './worker';
 
 const NON_ADMIN_ROLES: Role[] = ['CUSTOMER', 'MERCHANT', 'COURIER', 'DISPATCHER'];
 
@@ -120,6 +120,14 @@ describe('event ops endpoints', () => {
 
   describe('GET /admin/ops/queues', () => {
     it('reports the depth of the work queues and their dead-letter queues', async () => {
+      // Declare the real topology the way the worker does, so every queue exists.
+      const broker = new worker.RabbitMqService(workerConfig());
+      broker.onModuleInit();
+      await until(() => broker.isConnected());
+      // Ask twice: the first lookup after boot used to return null while the channel opened.
+      await request(t.http)
+        .get('/api/v1/admin/ops/queues')
+        .set('Cookie', await t.cookieFor('ADMIN'));
       const res = await request(t.http)
         .get('/api/v1/admin/ops/queues')
         .set('Cookie', await t.cookieFor('ADMIN'))
@@ -131,10 +139,11 @@ describe('event ops endpoints', () => {
         ['webhooks.parcel-events', 'work'],
         ['webhooks.parcel-events.dlq', 'dlq'],
       ]);
-      // The queues exist once the worker has run, so counts are numbers (null = queue missing).
       for (const q of res.body) {
-        expect(q.messages === null || Number.isInteger(q.messages)).toBe(true);
+        expect(Number.isInteger(q.messages)).toBe(true);
+        expect(Number.isInteger(q.consumers)).toBe(true);
       }
+      await broker.onModuleDestroy();
     });
   });
 
