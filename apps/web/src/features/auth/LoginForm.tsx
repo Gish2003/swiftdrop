@@ -5,11 +5,12 @@ import { useState } from 'react';
 import { Alert, Button, FormField, Input } from '@/components/ui';
 import { api } from '@/lib/api/client';
 import { errorMessage } from '@/lib/api/errors';
+import { GoogleButton } from './GoogleButton';
 
-/** Owner: M2. Works as soon as POST /auth/login is implemented. TODO(M2): Google sign-in button → /api/v1/auth/google */
+/** Owner: M2. Email + password sign-in, plus a Google sign-in link. */
 export function LoginForm() {
   const router = useRouter();
-  const next = useSearchParams().get('next');
+  const next = safeNext(useSearchParams().get('next'));
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
 
@@ -43,6 +44,15 @@ export function LoginForm() {
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? 'Signing in…' : 'Sign in'}
       </Button>
+
+      <GoogleButton label="Sign in with Google" />
     </form>
   );
+}
+
+/** Only same-site paths are allowed after login, so `?next=https://evil.example` can't redirect off-site. */
+function safeNext(next: string | null): string | null {
+  return next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\')
+    ? next
+    : null;
 }
