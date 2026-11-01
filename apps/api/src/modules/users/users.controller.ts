@@ -5,6 +5,7 @@ import {
   AdminCreateUserDto,
   AdminUpdateUserDto,
   ListUsersQuery,
+  PaginatedUsersDto,
   UpdateMeDto,
   UserDto,
 } from './dto/user.dto';
@@ -38,19 +39,20 @@ export class AdminUsersController {
   constructor(private readonly users: UsersService) {}
 
   @Get()
+  @ApiOkResponse({ type: PaginatedUsersDto })
   list(@Query() q: ListUsersQuery) {
     return this.users.adminList(q);
   }
 
   @Post()
   @ApiOkResponse({ type: UserDto })
-  create(@Body() dto: AdminCreateUserDto) {
-    return this.users.adminCreate(dto);
+  create(@Body() dto: AdminCreateUserDto, @CurrentUser() actor: AuthUser) {
+    return this.users.adminCreate(dto, actor);
   }
 
   @Patch(':id')
   @ApiOkResponse({ type: UserDto })
-  update(@Param('id') id: string, @Body() dto: AdminUpdateUserDto) {
-    return this.users.adminUpdate(id, dto);
+  update(@Param('id') id: string, @Body() dto: AdminUpdateUserDto, @CurrentUser() actor: AuthUser) {
+    return this.users.adminUpdate(id, dto, actor);
   }
 }

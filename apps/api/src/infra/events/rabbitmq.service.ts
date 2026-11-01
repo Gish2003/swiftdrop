@@ -16,7 +16,6 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RabbitMqService.name);
   private connection?: amqp.AmqpConnectionManager;
   private channel?: ChannelWrapper;
-  private inspector?: ChannelWrapper;
 
   constructor(@InjectConfig() private readonly config: Env) {}
 
@@ -38,29 +37,40 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
 
   /**
    * Message/consumer counts of a queue (passive declare), or null if it does not exist or the
-   * broker is unreachable. Uses its own channel: a passive declare of a missing queue closes the
-   * channel, and that must not disturb the SSE subscriber channel. The wrapper reopens it.
+   * broker is unreachable. Each call opens its own short-lived channel: a passive declare of a
+   * missing queue makes the broker close that channel, and that must not disturb the SSE
+   * subscriber channel or the next lookup.
    */
   async queueDepth(queue: string): Promise<{ messages: number; consumers: number } | null> {
-    if (!this.connection) return null;
-    this.inspector ??= this.connection.createChannel({ json: false });
+    const conn = this.connection?.connection;
+    if (!conn) return null;
+    let ch: Channel | undefined;
     try {
-      const q = await this.inspector.checkQueue(queue);
+      ch = await conn.createChannel();
+      // The broker closing the channel (missing queue) is emitted as 'error'; it is expected here.
+      ch.on('error', () => undefined);
+      const q = await ch.checkQueue(queue);
       return { messages: q.messageCount, consumers: q.consumerCount };
     } catch {
       return null;
+    } finally {
+      await ch?.close().catch(() => undefined);
     }
   }
 
   /**
-   * Publish straight to a work queue (default exchange), with broker confirm. Only for operator
-   * re-queues (e.g. re-delivering one webhook); domain events always go through OutboxService.
+   * Publish straight to a work queue (default exchange), with broker confirm (the channel wrapper
+   * uses a confirm channel). Callers must check the queue exists first: the default exchange
+   * silently drops messages for a missing queue. Only for operator re-queues (e.g. re-delivering one
+   * webhook); domain events always go through OutboxService.
    */
   async publishToQueue(queue: string, body: unknown, headers: Record<string, string> = {}) {
     await this.channel!.sendToQueue(queue, Buffer.from(JSON.stringify(body)), {
       persistent: true,
       contentType: 'application/json',
       headers,
+      // Fail instead of hanging the request if the broker drops mid-publish.
+      timeout: 10_000,
     });
   }
 
@@ -90,7 +100,6 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await this.inspector?.close();
     await this.channel?.close();
     await this.connection?.close();
   }

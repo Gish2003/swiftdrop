@@ -322,6 +322,20 @@ describe('event consumers', () => {
       expect(stored).not.toContain(RECIPIENT_PHONE);
     });
 
+    it('emails both customer and recipient even when their addresses mask the same way', async () => {
+      const parcel = await newParcel();
+      // Same first letter, last letter and domain as the customer → identical masked form.
+      const [local, domain] = customer.email.split('@') as [string, string];
+      const lookalike = `${local[0]}xxxxxxxxx${local.slice(-1)}@${domain}`;
+      await prisma.parcel.update({ where: { id: parcel.id }, data: { recipientEmail: lookalike } });
+
+      await notifications.handle(created(parcel));
+
+      expect(mail.sendEmail.mock.calls.map((c) => c[0]).sort()).toEqual(
+        [customer.email, lookalike].sort(),
+      );
+    });
+
     it('sends a duplicate event only once (NotificationLog count stays the same)', async () => {
       const event = statusChanged(await newParcel());
 
