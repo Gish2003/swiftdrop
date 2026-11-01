@@ -31,6 +31,3 @@ apps/api/.openapi/
 # Claude Code runtime state
 .claude/*.lock
 .claude/settings.local.json
-
-#Local documents (not tracked)
-documents/
